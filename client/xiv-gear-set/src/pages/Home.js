@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux';
+import React, {useState} from 'react'
+import {v4 as uuidv4} from 'uuid';
+import { useDispatch} from 'react-redux';
 import {getItems} from '../actions/items'
 import MainPanel from '../Components/MainPanel/MainPanel';
 import Navbar from '../Components/Navbar/Navbar';
@@ -11,17 +12,26 @@ import jobs from '../assets/gameData/jobs';
 import player from '../assets/gameData/player';
 import { getPlayerPortrait } from '../api';
 import Alert from '@mui/material/Alert';
+import { set } from 'mongoose';
 function Home() {
+  
+  const initSets = ()=>{
+    if (window.localStorage.localSets){
+      return JSON.parse(window.localStorage.localSets)
+    } else{
+      return [];
+    }
+
+  };
     let newPlayer = player;
     if ('player' in window.localStorage){
       newPlayer = JSON.parse(window.localStorage.getItem('player'));
     }
     const dispatch = useDispatch();
-    const items = useSelector((state)=> state.fetchedItems);
     const [character, setCharacter] = useState(baseStats); 
     const [playerInfo, setPlayerInfo] = useState(newPlayer);
     const [equippedGear, setEquippedGears] = useState({});
-    const [localSets, setLocalSets] = useState([]); // this will initialize from localStorage.
+    const [localSets, setLocalSets] = useState(initSets()); // this will initialize from localStorage.
     const [alertClasses, setalertClasses] = useState('hide');
     const [alertText, setAlertText] =useState(['error', 'No character Found!']);
     const changeJob = (job, gear=false)=>{
@@ -155,6 +165,71 @@ function Home() {
       setCharacter(newCharacter);
     
     }
+
+    const saveSet = (setName)=>{
+      let newSet = {
+        id : uuidv4(),
+        setName: setName,
+        equippedGear: equippedGear,
+        job: character.job,
+        clan: character.clan,
+      };
+      try {
+        let old = (window.localStorage.localSets?(JSON.parse(window.localStorage.localSets)):([]))
+        old.push(newSet);
+        window.localStorage.setItem('localSets',JSON.stringify(old));
+        setLocalSets(JSON.parse(window.localStorage.localSets))
+        alert('Successfully saved set.')
+        
+      } catch (error) {
+        console.log(error+ 'save new set failed');
+        
+      }
+
+    };
+
+    const loadSet = (set)=>{
+      dispatch(getItems(set.job));
+      let newCharacter = baseStats;
+      newCharacter.job = set.job;
+      newCharacter.jobName = jobs.find(item=>{return item.code === set.job}).name
+      newCharacter.clan = set.clan;
+      const newStats = updateStats(set.job, newCharacter);
+      newCharacter = {
+        ...newCharacter,
+        HP: newStats[0],
+        attributes: newStats[1],
+        offensiveProp: newStats[2],
+        defensiveProp: newStats[3],
+        physicalProp: newStats[4],
+        mentalProp: newStats[5],
+        role:  newStats[6],
+      }
+      setCharacter(newCharacter);
+
+      setEquippedGears(set.equippedGear);
+
+
+    }
+
+    const deleteSet = (id)=>{
+      try {
+        let deleteIndex;
+        let old = JSON.parse(window.localStorage.localSets)
+        old.forEach((item,index)=>{
+          if (item.id === id){
+            deleteIndex=index;
+          }
+        })
+        old.splice(deleteIndex,1);
+        window.localStorage.setItem('localSets',JSON.stringify(old));
+        setLocalSets(JSON.parse(window.localStorage.localSets));
+        return 0;
+      } catch (error) {
+        console.log(error);
+        return -1;
+      }
+    }
     
 
 
@@ -167,16 +242,20 @@ function Home() {
         
         <div className='wrapper'>
           <SidePanel 
-          localSets={[{id: 123, name: 'newset'},{id: 124, name: 'newset2'} ]} 
+          localSets={localSets} 
           changeJob = {changeJob}
           changeClan = {changeClan}
           changePlayer = {changePlayer}
-            
+          saveSet = {saveSet}
+          loadSet = {loadSet}
+          deleteSet = {deleteSet}
           />
           <MainPanel
           character = {character}
           playerInfo = {playerInfo}
           updateGear = {updateGear}
+          gears = {equippedGear}
+
            />
         </div>
 
@@ -214,7 +293,8 @@ const updateHP=(job,character,newAtrributes)=>{
   newHP = Math.floor(baseStats.HP * jbaseStats.jobMod.HP);
   // if the role is not tank
   if (job !=='PLD' && job !=='DRK' && job !=='GBR' && job !=='WAR'){
-    newHP+= Math.floor((newAtrributes[2].VIT - character.Main) * 24.33);
+    newHP+= Math.floor((newAtrributes[2].VIT - character.Main) * 24.3);
+
   }
 
   // if the role is a tank
@@ -229,7 +309,6 @@ const updateHP=(job,character,newAtrributes)=>{
 
 }
 const updateAttributes=(job,character)=>{
-
   let newAtrributes = [
     {STR: '',literal: 'Strength'},
     {DEX: '',literal: 'Dexterity'},
@@ -243,7 +322,6 @@ const updateAttributes=(job,character)=>{
     const attrName = Object.keys(attribute)[0];
     attribute[attrName] = Math.floor(character.Main * baseStats.jobMod[attrName]);
     if (clanBase){
-      
       attribute[attrName] +=  clanBase.clanMod[attrName];
     }
     
@@ -260,16 +338,15 @@ const updateOffensiveByGear=(gear,offensiveProp)=>{
   attrList.forEach(attr=>{
     switch (attr[0]) {
       case 'CriticalHit':
-        result[0].criticalHit += attr[1].NQ;
+        result[0].criticalHit += attr[1].HQ?(attr[1].HQ):(attr[1].NQ);
         break;
 
       case 'Determination':
-        result[1].Determination += attr[1].NQ;
+        result[1].Determination += attr[1].HQ?(attr[1].HQ):(attr[1].NQ);
         break;
       
       case 'DirectHitRate':
-        console.log(result);
-        result[2].directHitRate += attr[1].NQ;
+        result[2].directHitRate +=attr[1].HQ?(attr[1].HQ):(attr[1].NQ);
         break;
       default:
         break;
@@ -315,7 +392,7 @@ const updatePhysicalPropByGear=(gear,physicalProp,attributes,job)=>{
   }
 
   if ('SkillSpeed' in gear[1].stats){
-    result[1].skillSpeed += gear[1].stats.SkillSpeed.NQ;
+    result[1].skillSpeed += gear[1].stats.SkillSpeed.HQ?(gear[1].stats.SkillSpeed.HQ):( gear[1].stats.SkillSpeed.NQ);
   }
   
   return result;
@@ -352,7 +429,7 @@ const updateMentalPropBygear=(gear,mentalProp,attributes,job)=>{
   }
   result[1].healingMagicPotency = attributes[4].MND;
   if ('SpellSpeed' in gear[1].stats){
-    result[2].spellSpeed += gear[1].stats.SpellSpeed.NQ;
+    result[2].spellSpeed += gear[1].stats.SpellSpeed.HQ?(gear[1].stats.SpellSpeed.HQ):(gear[1].stats.SpellSpeed.NQ);
   }
   return result;
 };
@@ -379,11 +456,11 @@ const updateMentalProp=(job,character,newAtrributes)=>{
 const updateRoleByGear= (gear,role)=>{
   let result = role;
   if ('Piety' in gear[1].stats){
-    result[0].piety += gear[1].stats.Piety.NQ;
+    result[0].piety += gear[1].stats.Piety.HQ?(gear[1].stats.Piety.HQ):( gear[1].stats.Piety.NQ);
   }
 
   if ('Tenacity' in gear[1].stats){
-    result[1].tenacity += gear[1].stats.Tenacity.NQ;
+    result[1].tenacity += gear[1].stats.Tenacity.HQ?(gear[1].stats.Tenacity.HQ):( gear[1].stats.Tenacity.NQ);
   }
 
   return result;
@@ -417,23 +494,23 @@ const updateAttributesByGear=(gear,attributes)=>{
   attrList.forEach(attr=>{
     switch (attr[0]) {
       case 'Strength':
-        result[0].STR += attr[1].NQ;
+        result[0].STR += attr[1].HQ?(attr[1].HQ):(attr[1].NQ);
         break;
 
       case 'Dexterity':
-        result[1].DEX += attr[1].NQ;
+        result[1].DEX += attr[1].HQ?(attr[1].HQ):(attr[1].NQ);
         break;
       
       case 'Intelligence':
-        result[3].INT += attr[1].NQ;
+        result[3].INT += attr[1].HQ?(attr[1].HQ):(attr[1].NQ);
         break;
 
       case 'Vitality':
-        result[2].VIT += attr[1].NQ;
+        result[2].VIT += attr[1].HQ?(attr[1].HQ):(attr[1].NQ);
         break;
 
       case 'Mind':
-        result[4].MND += attr[1].NQ;
+        result[4].MND += attr[1].HQ?(attr[1].HQ):(attr[1].NQ);
         break;
         
       default:

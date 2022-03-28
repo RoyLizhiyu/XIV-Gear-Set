@@ -3,7 +3,7 @@ import MainStyle from './style'
 import ItemCard from '../ItemCard/ItemCard'
 import PropertyEntry from './PropertyEntry/PropertyEntry'
 
-function MainPanel({character,playerInfo,updateGear}) {
+function MainPanel({character,playerInfo,updateGear, gears}) {
     
     const names = playerInfo.CharacterName.split(' ');
     const upperNames = names.map(name=>{return name.charAt(0).toUpperCase()+name.slice(1)});
@@ -21,12 +21,12 @@ function MainPanel({character,playerInfo,updateGear}) {
                 <div className='characterBody'>
                     <div className='itemColumn'>
                         <div className='itemCard'>
-                            <ItemCard  character={character}  slot='Main Hand' id='mainHand' updateGear={updateGear} />
-                            <ItemCard character={character} slot='Head' id='head' updateGear={updateGear} />
-                            <ItemCard character={character} slot='Body' id='body' updateGear={updateGear} />
-                            <ItemCard  character={character} slot='Hands' id='hands' updateGear={updateGear} />
-                            <ItemCard character={character} slot='Legs' id='legs' updateGear={updateGear} />
-                            <ItemCard character={character} slot='Feet' id='feet' updateGear={updateGear} />
+                            <ItemCard gears={gears}  character={character}  slot='Main Hand' id='mainHand' updateGear={updateGear} />
+                            <ItemCard gears={gears} character={character} slot='Head' id='head' updateGear={updateGear} />
+                            <ItemCard gears={gears} character={character} slot='Body' id='body' updateGear={updateGear} />
+                            <ItemCard gears={gears}  character={character} slot='Hands' id='hands' updateGear={updateGear} />
+                            <ItemCard gears={gears} character={character} slot='Legs' id='legs' updateGear={updateGear} />
+                            <ItemCard gears={gears} character={character} slot='Feet' id='feet' updateGear={updateGear} />
                         </div>
                     </div>
                     <div className='characterImg'>
@@ -39,12 +39,12 @@ function MainPanel({character,playerInfo,updateGear}) {
                     </div>
                     <div className='itemColumn'>
                         <div className='itemCard'>
-                                {character.job==='PLD'?(<ItemCard  character={character} slot='Off Hand' id='offHand' updateGear={updateGear} />):('')}
-                                <ItemCard  character={character} slot='Earrings' id='earrings' updateGear={updateGear} />
-                                <ItemCard  character={character} slot='Necklace' id='necklace' updateGear={updateGear} />
-                                <ItemCard character={character} slot='Bracelets' id='bracelets' updateGear={updateGear} />
-                                <ItemCard character={character} slot='Ring 1' id='ring' updateGear={updateGear} />
-                                <ItemCard character={character} slot='Ring 2' id='ring' updateGear={updateGear} />
+                                {character.job==='PLD'?(<ItemCard gears={gears} character={character} slot='Off Hand' id='offHand' updateGear={updateGear} />):('')}
+                                <ItemCard gears={gears} character={character} slot='Earrings' id='earrings' updateGear={updateGear} />
+                                <ItemCard  gears={gears} character={character} slot='Necklace' id='necklace' updateGear={updateGear} />
+                                <ItemCard gears={gears} character={character} slot='Bracelets' id='bracelets' updateGear={updateGear} />
+                                <ItemCard gears={gears} character={character} slot='Ring 1' id='ring' updateGear={updateGear} />
+                                <ItemCard gears={gears} character={character} slot='Ring 2' id='ring' updateGear={updateGear} />
                             </div>
 
                     </div>

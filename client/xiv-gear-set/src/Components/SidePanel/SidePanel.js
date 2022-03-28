@@ -7,7 +7,7 @@ import Select from '@mui/material/Select';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import style from './menuItemStyle';
-function SidePanel({localSets,changeJob,changeClan,changePlayer}) {
+function SidePanel({localSets,changeJob,changeClan,changePlayer,saveSet,loadSet,deleteSet}) {
     const [showSide, setShowSide] = useState(false);
     const [name, setName] = useState('');
     const [job, setJob] = useState('');
@@ -29,6 +29,37 @@ function SidePanel({localSets,changeJob,changeClan,changePlayer}) {
         const server = e.target.server.value;
         changePlayer(name,server);
     }
+    const handleSave = (e)=>{
+        e.preventDefault();
+        if (name ===''){
+            alert('Please enter a set name');
+            return;
+        }
+        saveSet(name);
+        setName('');
+    }
+
+    const handleLoad = (e)=>{
+        e.preventDefault();
+        setloaded(e.target.value);
+        setJob(e.target.value.job);
+        setClan(e.target.value.clan);
+        loadSet(e.target.value);
+    }
+    const handleDelete = (e)=>{
+        e.preventDefault();
+        const result = deleteSet(loaded.id);
+        if (result === 0){
+            setloaded('');
+            setJob('');
+            setClan('');
+            alert('Successfully deleted set.')
+        } else{
+            alert('delete set failed.')
+        }
+
+    }
+
   return (
     <SideStyle>
         <div className='mobileSideMenu' onClick={()=>setShowSide(!showSide)}><MdMenu /></div>
@@ -121,7 +152,7 @@ function SidePanel({localSets,changeJob,changeClan,changePlayer}) {
 
                             <li>
                                 <div className='btns'>
-                                    <button className='setButtons saveBtn'>Save</button>
+                                    <button className='setButtons saveBtn' onClick={handleSave}>Save</button>
                                     <button className='setButtons'>Clear</button>
                                 </div>
 
@@ -139,16 +170,17 @@ function SidePanel({localSets,changeJob,changeClan,changePlayer}) {
                             name='loadSets' 
                             className='dropDown' 
                             value={loaded} 
-                            onChange={(e)=> {setloaded(e.target.value)}}
+                            onChange={handleLoad}
                             displayEmpty
                             renderValue={loaded !== ''? undefined: ()=>'saved sets'}
                             >
-                                {localSets? (localSets.map(set=>{
-                                    return <MenuItem key={set.id} value={set.id} className='setOption'>{set.name}</MenuItem>
-                                })) : (<MenuItem className='setOption'>You have no saved Sets</MenuItem>)}
+                                {localSets.length>0? (localSets.map(set=>{
+                                    return <MenuItem key={set.id} value={set} className='setOption'>{set.setName}</MenuItem>
+                                })) : (<MenuItem className='setOption' disabled>You have no saved Sets</MenuItem>)}
 
 
                             </Select>
+                            <button className='setButtons' onClick={handleDelete}>Delete Set</button>
                         </label>
                     </form>
 

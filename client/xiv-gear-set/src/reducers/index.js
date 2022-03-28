@@ -1,4 +1,4 @@
-const item = (state={fetchedItems: {}, isLoading:false}, action) => {
+const item = (state={fetchedItems: {}, isLoading:false, }, action) => {
     switch(action.type){
         case 'START_LOADING':
             return {...state, isLoading:true};
